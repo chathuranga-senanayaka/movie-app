@@ -1,6 +1,10 @@
 import React from "react";
+import Search from "./components/Search";
+import { useState } from "react";
 
 function App() {
+  const [searchTerm, setSearchTerm] = useState("");
+
   return (
     <main>
       <div className="pattern" />
@@ -12,6 +16,7 @@ function App() {
             Without the Hassle
           </h1>
         </header>
+        <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
       </div>
     </main>
   );
