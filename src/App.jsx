@@ -3,6 +3,7 @@ import Search from "./components/Search";
 import { useState } from "react";
 import Spinner from "./components/Spinner";
 import MovieCard from "./components/MovieCard";
+import { useDebounce } from "react-use";
 
 const API_BASE_URL = "https://api.themoviedb.org/3";
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -18,12 +19,19 @@ function App() {
   const [erorMessage, setErorMessage] = useState("");
   const [movieList, setMovieList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const fetchMovies = async () => {
+  const [debounceSearchTerm, setDebounceSearchTerm] = useState("");
+
+  // debouce the search term to prevent making too many API requests
+  //by waiting for the user to stop typing for 500ms
+  useDebounce(() => setDebounceSearchTerm(searchTerm), 500, [searchTerm]);
+  const fetchMovies = async (query = "") => {
     setIsLoading(true);
     setErorMessage("");
 
     try {
-      const endpoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      const endpoint = query
+        ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
+        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
       const response = await fetch(endpoint, API_OPTIONS);
       if (!response.ok) {
         throw new Error("Network response was not ok");
@@ -48,8 +56,8 @@ function App() {
   };
 
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    fetchMovies(debounceSearchTerm);
+  }, [debounceSearchTerm]);
 
   return (
     <main>
