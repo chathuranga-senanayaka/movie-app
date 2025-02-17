@@ -1,9 +1,54 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Search from "./components/Search";
 import { useState } from "react";
+import Spinner from "./components/Spinner";
 
+const API_BASE_URL = "https://api.themoviedb.org/3";
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const API_OPTIONS = {
+  method: "GET",
+  headers: {
+    accept: "application/json",
+    Authorization: `Bearer ${API_KEY}`,
+  },
+};
 function App() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [erorMessage, setErorMessage] = useState("");
+  const [movieList, setMovieList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const fetchMovies = async () => {
+    setIsLoading(true);
+    setErorMessage("");
+
+    try {
+      const endpoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      const response = await fetch(endpoint, API_OPTIONS);
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      console.log(data);
+
+      if (data.Response === "False") {
+        setErorMessage(data.Error || "Fail to fetch movies");
+        setMovieList([]);
+        return;
+      }
+
+      setMovieList(data.results || []);
+    } catch (error) {
+      console.error("Error fetching movies:", error);
+      setErorMessage("Error fetching movies, Please try again later...");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMovies();
+  }, []);
 
   return (
     <main>
@@ -15,8 +60,22 @@ function App() {
             Find <span className="text-gradient">Movies</span> You'll Enjoy
             Without the Hassle
           </h1>
+          <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
-        <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        <section className="all-movies">
+          <h2>All Movies</h2>
+          {isLoading ? (
+            <Spinner />
+          ) : erorMessage ? (
+            <p className="text-red-500">{erorMessage}</p>
+          ) : (
+            <ul>
+              {movieList.map((movie) => (
+                <p className="text-white">{movie.title}</p>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </main>
   );
